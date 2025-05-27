@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 10% 4%; /* #0F0F23 */
+  --foreground: 0 0% 98%;
+  --muted: 240 4% 16%;
+  --muted-foreground: 240 5% 65%;
+  --popover: 240 10% 4%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 4%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 4% 16%;
+  --input: 240 4% 16%;
+  --primary: 258 90% 66%; /* #6366F1 neon-purple */
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4% 16%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 4% 16%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 258 90% 66%;
+  --radius: 0.5rem;
+  
+  /* Gaming theme colors */
+  --neon-purple: 258 90% 66%; /* #6366F1 */
+  --neon-cyan: 197 92% 43%; /* #06B6D4 */
+  --neon-pink: 328 85% 70%; /* #EC4899 */
+  --neon-green: 165 80% 39%; /* #10B981 */
+  --dark-bg: 240 10% 4%; /* #0F0F23 */
+  --dark-accent: 250 20% 12%; /* #1E1B4B */
+}
+
+.dark {
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+  --muted: 240 4% 16%;
+  --muted-foreground: 240 5% 65%;
+  --popover: 240 10% 4%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 4%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 4% 16%;
+  --input: 240 4% 16%;
+  --primary: 258 90% 66%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4% 16%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 4% 16%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 258 90% 66%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    background: hsl(var(--dark-bg));
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer components {
+  .gradient-border {
+    background: linear-gradient(45deg, hsl(var(--neon-purple)), hsl(var(--neon-cyan)), hsl(var(--neon-pink)));
+    padding: 2px;
+    border-radius: 12px;
+  }
+  
+  .gradient-border-inner {
+    background: hsl(var(--dark-bg));
+    border-radius: 10px;
+  }
+  
+  .neon-text {
+    text-shadow: 0 0 10px currentColor;
+  }
+  
+  .neon-glow-purple {
+    box-shadow: 0 0 20px hsla(var(--neon-purple), 0.5);
+  }
+  
+  .neon-glow-cyan {
+    box-shadow: 0 0 20px hsla(var(--neon-cyan), 0.5);
+  }
+  
+  .neon-glow-pink {
+    box-shadow: 0 0 20px hsla(var(--neon-pink), 0.5);
+  }
+}
+
+@layer utilities {
+  .animate-pulse-neon {
+    animation: pulse-neon 2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-neon {
+  0%, 100% { 
+    box-shadow: 0 0 20px hsla(var(--neon-purple), 0.5); 
+  }
+  50% { 
+    box-shadow: 0 0 30px hsla(var(--neon-purple), 0.8); 
+  }
+}
+
+/* Gaming font imports */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Orbitron:wght@700;900&display=swap');
+
+.font-gaming {
+  font-family: 'Orbitron', monospace;
+}
