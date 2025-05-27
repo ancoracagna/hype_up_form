@@ -1,3 +1,6 @@
+/* Gaming font imports */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Orbitron:wght@700;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -110,9 +113,6 @@
     box-shadow: 0 0 30px hsla(var(--neon-purple), 0.8); 
   }
 }
-
-/* Gaming font imports */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Orbitron:wght@700;900&display=swap');
 
 .font-gaming {
   font-family: 'Orbitron', monospace;

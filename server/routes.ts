@@ -1,7 +1,7 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertStreamerApplicationSchema } from "@shared/schema";
+import { insertStreamerApplicationSchema, insertPageViewSchema, insertChatbotInteractionSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -40,6 +40,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Track page views
+  app.post("/api/analytics/page-view", async (req, res) => {
+    try {
+      const pageViewData = insertPageViewSchema.parse({
+        path: req.body.path || "/",
+        userAgent: req.get("User-Agent"),
+        ip: req.ip || req.connection.remoteAddress,
+      });
+      
+      await storage.trackPageView(pageViewData);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        message: "Internal server error" 
+      });
+    }
+  });
+
+  // Get analytics data (admin endpoint)
+  app.get("/api/analytics", async (req, res) => {
+    try {
+      const analytics = await storage.getAnalytics();
+      res.json({ success: true, data: analytics });
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        message: "Internal server error" 
+      });
+    }
+  });
+
   // Simple chatbot response endpoint
   app.post("/api/chatbot", async (req, res) => {
     try {
@@ -65,6 +97,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (lowerMessage.includes("technical") || lowerMessage.includes("problem")) {
         response = "Technical issues can be frustrating! Common solutions include checking your internet connection, updating your streaming software, and adjusting your stream settings. If the problem persists, our technical team can provide more specific help.";
       }
+
+      // Track the chatbot interaction
+      await storage.trackChatbotInteraction({
+        userMessage: message,
+        botResponse: response,
+      });
 
       res.json({ 
         success: true, 

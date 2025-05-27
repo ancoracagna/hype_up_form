@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Rocket, Star, Flame, Gamepad2, Video, Calendar, Trophy, Mountain, Share, Mail, CheckCircle, Twitch, Youtube } from "lucide-react";
+import { Rocket, Star, Flame, Gamepad2, Video, Calendar, Trophy, Mountain, Share, Mail, CheckCircle, Twitch, Youtube, BarChart3 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { ChatbotWidget } from "@/components/ui/chatbot";
 import { insertStreamerApplicationSchema } from "@shared/schema";
+import { useLocation, Link } from "wouter";
 
 const formSchema = insertStreamerApplicationSchema.extend({
   email: z.string().email("Please enter a valid email address"),
