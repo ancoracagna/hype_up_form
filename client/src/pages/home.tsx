@@ -28,6 +28,7 @@ type FormData = z.infer<typeof formSchema>;
 
 export default function Home() {
   const [showSuccess, setShowSuccess] = useState(false);
+  const [location] = useLocation();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -43,6 +44,22 @@ export default function Home() {
       email: "",
     },
   });
+
+  // Track page view for analytics
+  useEffect(() => {
+    const trackPageView = async () => {
+      try {
+        await apiRequest("POST", "/api/analytics/page-view", {
+          path: location,
+        });
+      } catch (error) {
+        // Silent fail for analytics
+        console.log("Analytics tracking failed:", error);
+      }
+    };
+    
+    trackPageView();
+  }, [location]);
 
   // Auto-fill Telegram User ID from URL parameters
   useEffect(() => {
@@ -405,16 +422,13 @@ export default function Home() {
         <p className="text-gray-400">
           <span className="text-cyan-400 font-semibold">Powered by Hype UP</span> – Helping streamers go viral
         </p>
-        <div className="mt-4 flex justify-center space-x-6 text-2xl">
-          <div className="text-purple-400 hover:text-purple-300 cursor-pointer transition-colors duration-300">
-            <i className="fab fa-discord"></i>
-          </div>
-          <div className="text-cyan-400 hover:text-cyan-300 cursor-pointer transition-colors duration-300">
-            <i className="fab fa-twitter"></i>
-          </div>
-          <div className="text-pink-400 hover:text-pink-300 cursor-pointer transition-colors duration-300">
-            <i className="fab fa-instagram"></i>
-          </div>
+        <div className="mt-4 flex justify-center items-center space-x-6">
+          <Link href="/admin">
+            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-purple-400 transition-colors">
+              <BarChart3 className="h-4 w-4 mr-1" />
+              Admin
+            </Button>
+          </Link>
         </div>
       </footer>
 
