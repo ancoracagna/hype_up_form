@@ -84,7 +84,7 @@ export default function Home() {
             </p>
             <div className="flex justify-center space-x-6 text-pink-400">
               <Rocket className="h-8 w-8 animate-bounce" />
-              <Star className="h-8 w-8 animate-pulse" />
+              <Star className="h-8 w-8 animate-bounce" style={{ animationDelay: "0.05s" }} />
               <Flame className="h-8 w-8 animate-bounce" style={{ animationDelay: "0.1s" }} />
             </div>
           </div>
