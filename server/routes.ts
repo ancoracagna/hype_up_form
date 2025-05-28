@@ -62,12 +62,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get analytics data (admin endpoint)
   app.get("/api/analytics", async (req, res) => {
     try {
+      console.log("Analytics endpoint hit");
       const analytics = await storage.getAnalytics();
+      console.log("Analytics data:", analytics);
       res.json({ success: true, data: analytics });
     } catch (error) {
+      console.error("Analytics error:", error);
       res.status(500).json({ 
         success: false, 
-        message: "Internal server error" 
+        message: "Internal server error",
+        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });

@@ -26,8 +26,9 @@ interface Analytics {
 }
 
 export default function Admin() {
-  const { data: analytics, isLoading } = useQuery<{ success: boolean; data: Analytics }>({
+  const { data: analytics, isLoading, error } = useQuery<{ success: boolean; data: Analytics }>({
     queryKey: ["/api/analytics"],
+    retry: 3,
   });
 
   if (isLoading) {
