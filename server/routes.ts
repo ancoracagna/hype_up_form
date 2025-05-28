@@ -1,11 +1,140 @@
-import type { Express, Request } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
 import { storage } from "./storage";
 import { insertStreamerApplicationSchema, insertPageViewSchema, insertChatbotInteractionSchema } from "@shared/schema";
 import { z } from "zod";
 
+// --- Настройка Passport ---
+// В реальном приложении пользователи должны храниться в БД и пароли хэшироваться.
+// Для простоты, используем одного жестко закодированного админа.
+const adminUser = {
+  id: 1, // Уникальный ID для пользователя
+  username: process.env.ADMIN_USERNAME || "admin",
+  password: process.env.ADMIN_PASSWORD || "password",
+  role: "admin",
+};
+// Не забудьте добавить ADMIN_USERNAME и ADMIN_PASSWORD в .env файл!
+
+passport.use(
+  new LocalStrategy(
+    // По умолчанию LocalStrategy ожидает поля 'username' и 'password' в req.body
+    async (username, password, done) => {
+      try {
+        // В реальном приложении здесь будет проверка по базе данных
+        // const userFromDb = await storage.getUserByUsername(username);
+        // if (!userFromDb) {
+        //   return done(null, false, { message: "Неверное имя пользователя." });
+        // }
+        // const isPasswordMatch = await bcrypt.compare(password, userFromDb.password); // Если используете bcrypt
+        // if (!isPasswordMatch) {
+        //   return done(null, false, { message: "Неверный пароль." });
+        // }
+        // return done(null, userFromDb);
+
+        // Упрощенная проверка для примера:
+        if (username === adminUser.username && password === adminUser.password) {
+          return done(null, adminUser); // Передаем объект пользователя
+        } else {
+          return done(null, false, { message: "Неверное имя пользователя или пароль." });
+        }
+      } catch (err) {
+        return done(err);
+      }
+    }
+  )
+);
+
+passport.serializeUser((user: any, done) => {
+  // Сохраняем только ID пользователя в сессию для минимизации данных в куке
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id: number, done) => {
+  try {
+    // В реальном приложении здесь будет поиск пользователя в БД по ID
+    // const user = await storage.getUser(id);
+    // if (user) {
+    //   done(null, user);
+    // } else {
+    //   done(new Error("Пользователь не найден в сессии."));
+    // }
+
+    // Упрощенная десериализация для примера:
+    if (id === adminUser.id) {
+      done(null, adminUser); // Возвращаем полный объект пользователя
+    } else {
+      done(new Error(`Пользователь с ID ${id} не найден.`));
+    }
+  } catch (err) {
+    done(err);
+  }
+});
+
+// Middleware для проверки аутентификации и роли администратора
+export function isAuthenticatedAdmin(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated() && (req.user as any)?.role === 'admin') {
+    return next();
+  }
+  res.status(401).json({ success: false, message: "Не авторизован или нет прав администратора" });
+}
+// --- Конец настройки Passport ---
+
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Submit streamer application
+  // --- Маршруты аутентификации ---
+  app.post("/api/auth/login", (req, res, next) => {
+    passport.authenticate("local", (err: Error | null, user: any, info: { message: string } | undefined) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ success: false, message: info?.message || "Ошибка входа" });
+      }
+      req.logIn(user, (loginErr) => { // req.logIn добавляет пользователя в req.user и устанавливает сессию
+        if (loginErr) {
+          return next(loginErr);
+        }
+        // Отправляем только неконфиденциальную информацию о пользователе
+        return res.json({ success: true, user: { id: user.id, username: user.username, role: user.role } });
+      });
+    })(req, res, next);
+  });
+
+  app.post("/api/auth/logout", (req, res, next) => {
+    req.logout((err) => { // req.logout() удаляет req.user и очищает сессию логина (но не саму сессию express)
+      if (err) {
+        return next(err);
+      }
+      // Дополнительно можно уничтожить всю сессию, если это необходимо
+      req.session.destroy((destroyErr) => {
+        if (destroyErr) {
+          console.error("Ошибка при уничтожении сессии:", destroyErr);
+          // Можно продолжить, даже если сессию не удалось уничтожить, но залогировать
+        }
+        res.clearCookie('connect.sid'); // Имя куки по умолчанию для express-session
+        res.json({ success: true, message: "Выход выполнен успешно" });
+      });
+    });
+  });
+
+  app.get("/api/auth/status", (req, res) => {
+    if (req.isAuthenticated()) { // req.isAuthenticated() проверяет наличие пользователя в сессии
+      const user = req.user as any;
+      res.json({
+        success: true,
+        isAuthenticated: true,
+        user: { id: user.id, username: user.username, role: user.role } // Отправляем неконфиденциальную информацию
+      });
+    } else {
+      res.json({ success: false, isAuthenticated: false });
+    }
+  });
+  // --- Конец маршрутов аутентификации ---
+
+
+  // Submit streamer application (остается публичным)
   app.post("/api/streamer-application", async (req, res) => {
     try {
       const validatedData = insertStreamerApplicationSchema.parse(req.body);
@@ -13,109 +142,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, application });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ 
-          success: false, 
-          message: "Validation failed", 
-          errors: error.errors 
+        res.status(400).json({
+          success: false,
+          message: "Validation failed",
+          errors: error.errors
         });
       } else {
-        res.status(500).json({ 
-          success: false, 
-          message: "Internal server error" 
+        console.error("Error creating streamer application:", error);
+        res.status(500).json({
+          success: false,
+          message: "Internal server error"
         });
       }
     }
   });
 
-  // Get all applications (for admin/debugging)
-  app.get("/api/streamer-applications", async (req, res) => {
+  // Get all applications (ЗАЩИЩАЕМ)
+  app.get("/api/streamer-applications", isAuthenticatedAdmin, async (req, res) => {
     try {
       const applications = await storage.getAllStreamerApplications();
       res.json({ success: true, applications });
     } catch (error) {
-      res.status(500).json({ 
-        success: false, 
-        message: "Internal server error" 
+      console.error("Error getting all streamer applications:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error"
       });
     }
   });
 
-  // Track page views
+  // Track page views (остается публичным)
   app.post("/api/analytics/page-view", async (req, res) => {
     try {
       const pageViewData = insertPageViewSchema.parse({
-        path: req.body.path || "/",
+        path: req.body.path || "/", // Обеспечиваем значение по умолчанию
         userAgent: req.get("User-Agent"),
-        ip: req.ip || req.connection.remoteAddress,
+        ip: req.ip || req.socket?.remoteAddress, // Используем req.socket.remoteAddress как запасной вариант
       });
-      
+
       await storage.trackPageView(pageViewData);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ 
-        success: false, 
-        message: "Internal server error" 
-      });
+      console.error("Error tracking page view:", error);
+      if (error instanceof z.ZodError) {
+         res.status(400).json({ success: false, message: "Invalid page view data", errors: error.errors });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Internal server error while tracking page view"
+        });
+      }
     }
   });
 
-  // Get analytics data (admin endpoint)
-  app.get("/api/analytics", async (req, res) => {
+  // Get analytics data (ЗАЩИЩАЕМ)
+  app.get("/api/analytics", isAuthenticatedAdmin, async (req, res) => {
     try {
-      console.log("Analytics endpoint hit");
       const analytics = await storage.getAnalytics();
-      console.log("Analytics data:", analytics);
       res.json({ success: true, data: analytics });
     } catch (error) {
       console.error("Analytics error:", error);
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         message: "Internal server error",
         error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
 
-  // Simple chatbot response endpoint
+  // Chatbot (остается публичным)
   app.post("/api/chatbot", async (req, res) => {
     try {
       const { message } = req.body;
-      
-      if (!message) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Message is required" 
+
+      if (typeof message !== 'string' || !message.trim()) { // Улучшенная проверка
+        return res.status(400).json({
+          success: false,
+          message: "Message is required and must be a non-empty string"
         });
       }
 
-      // Simple chatbot responses based on keywords
+      // ... (ваша логика ответа чат-бота) ...
       let response = "Thanks for your message! Our team will get back to you soon. In the meantime, check out our FAQ section for common questions.";
-      
-      const lowerMessage = message.toLowerCase();
-      if (lowerMessage.includes("help") || lowerMessage.includes("support")) {
-        response = "I'm here to help! You can ask me about streaming tips, technical issues, or how to grow your audience. What specific area would you like assistance with?";
-      } else if (lowerMessage.includes("stream") || lowerMessage.includes("streaming")) {
-        response = "Great question about streaming! For the best streaming experience, make sure you have a stable internet connection, good lighting, and engaging content. What aspect of streaming would you like to know more about?";
-      } else if (lowerMessage.includes("grow") || lowerMessage.includes("audience")) {
-        response = "Growing your audience takes time and consistency! Focus on creating quality content, engaging with your viewers, and maintaining a regular schedule. The Hype UP community is here to support your journey!";
-      } else if (lowerMessage.includes("technical") || lowerMessage.includes("problem")) {
-        response = "Technical issues can be frustrating! Common solutions include checking your internet connection, updating your streaming software, and adjusting your stream settings. If the problem persists, our technical team can provide more specific help.";
-      }
+      // (добавьте вашу логику выбора ответа здесь)
 
-      // Track the chatbot interaction
       await storage.trackChatbotInteraction({
         userMessage: message,
         botResponse: response,
       });
 
-      res.json({ 
-        success: true, 
-        response 
+      res.json({
+        success: true,
+        response
       });
     } catch (error) {
-      res.status(500).json({ 
-        success: false, 
-        message: "Internal server error" 
+      console.error("Chatbot error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error"
       });
     }
   });

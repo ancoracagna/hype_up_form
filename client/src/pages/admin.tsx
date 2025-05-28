@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Eye, MessageCircle, TrendingUp, Calendar, Mail, ExternalLink } from "lucide-react";
+import { Users, Eye, MessageCircle, TrendingUp, MessageSquare, Calendar, Mail, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 
 interface Analytics {
@@ -42,7 +42,7 @@ export default function Admin() {
     return (
       <div className="min-h-screen bg-background p-8">
         <div className="max-w-7xl mx-auto space-y-8">
-          <h1 className="font-gaming text-4xl font-bold text-purple-400">Admin Dashboard</h1>
+          <h1 className="font-gaming text-4xl font-bold text-purple-400">Панель Администратора</h1>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
@@ -81,58 +81,59 @@ export default function Admin() {
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="text-center mb-8">
           <h1 className="font-gaming text-4xl md:text-5xl font-bold text-purple-400 neon-text mb-4">
-            Admin Dashboard
+          Панель Администратора
           </h1>
-          <p className="text-gray-300 text-lg">Monitor streamer applications and platform analytics</p>
+          <p className="text-gray-300 text-lg">Мониторинг заявок стримеров и аналитики платформы</p>
         </div>
+        
 
         {/* Analytics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="bg-card border-purple-500/30 hover:border-purple-500/50 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-400">Total Applications</CardTitle>
+              <CardTitle className="text-sm font-medium text-purple-400">Всего заявок</CardTitle>
               <Users className="h-4 w-4 text-purple-400" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">{applications?.applications?.length || 0}</div>
-              <p className="text-xs text-gray-400">All time submissions</p>
+              <p className="text-xs text-gray-400">Подано за все время</p>
             </CardContent>
           </Card>
 
           <Card className="bg-card border-cyan-500/30 hover:border-cyan-500/50 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-cyan-400">Page Views</CardTitle>
+              <CardTitle className="text-sm font-medium text-cyan-400">Просмотры страниц</CardTitle>
               <Eye className="h-4 w-4 text-cyan-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats?.totalPageViews || "Loading..."}</div>
+              <div className="text-2xl font-bold text-white">{stats?.totalPageViews || "Загрузка..."}</div>
               <p className="text-xs text-gray-400">
-                {stats?.pageViewsToday || 0} today
+                {stats?.pageViewsToday || 0} сегодня
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-card border-pink-500/30 hover:border-pink-500/50 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-pink-400">Chat Interactions</CardTitle>
+              <CardTitle className="text-sm font-medium text-pink-400">Взаимодействия с чатом</CardTitle>
               <MessageCircle className="h-4 w-4 text-pink-400" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">{stats?.totalChatInteractions || "Loading..."}</div>
               <p className="text-xs text-gray-400">
-                {stats?.chatInteractionsToday || 0} today
+                {stats?.chatInteractionsToday || 0} сегодня
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-card border-green-500/30 hover:border-green-500/50 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-400">Active Now</CardTitle>
+              <CardTitle className="text-sm font-medium text-green-400">Активность</CardTitle>
               <TrendingUp className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">Live</div>
-              <p className="text-xs text-gray-400">Real-time tracking</p>
+              <div className="text-2xl font-bold text-white">В реальном времени</div>
+              <p className="text-xs text-gray-400">Отслеживание данных</p>
             </CardContent>
           </Card>
         </div>
@@ -142,7 +143,7 @@ export default function Admin() {
           <CardHeader>
             <CardTitle className="text-xl font-bold text-purple-400 flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Recent Streamer Applications
+              Недавние заявки стримеров
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -156,9 +157,9 @@ export default function Admin() {
                     <div className="gradient-border-inner p-4">
                       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                         <div className="flex-1 space-y-3">
-                          <div className="flex items-center gap-3">
-                            <Mail className="h-4 w-4 text-cyan-400" />
-                            <span className="text-white font-semibold">{application.email}</span>
+                          <div className="flex items-center gap-3 flex-wrap">
+                          <MessageSquare className="h-4 w-4 text-cyan-400 shrink-0" /> {/* Иконка для Telegram */}
+                            <span className="text-white font-semibold break-all">{application.telegramUsername}</span> {/* ЗАМЕНА */}
                             <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
                               {application.contentType}
                             </Badge>
@@ -169,11 +170,11 @@ export default function Admin() {
                           
                           <div className="grid md:grid-cols-2 gap-4 text-sm">
                             <div>
-                              <h4 className="text-purple-400 font-semibold mb-1">Goals:</h4>
+                              <h4 className="text-purple-400 font-semibold mb-1">Цели:</h4>
                               <p className="text-gray-300 line-clamp-2">{application.goals}</p>
                             </div>
                             <div>
-                              <h4 className="text-pink-400 font-semibold mb-1">Challenges:</h4>
+                              <h4 className="text-pink-400 font-semibold mb-1">Трудности:</h4>
                               <p className="text-gray-300 line-clamp-2">{application.challenges}</p>
                             </div>
                           </div>
@@ -209,9 +210,9 @@ export default function Admin() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 text-gray-400 text-sm">
+                        <div className="flex items-center gap-2 text-gray-400 text-sm shrink-0">
                           <Calendar className="h-4 w-4" />
-                          {application.createdAt ? format(new Date(application.createdAt), "MMM dd, yyyy") : "Recently submitted"}
+                          {application.createdAt ? format(new Date(application.createdAt), "dd.MM.yyyy") : "Недавно"}
                         </div>
                       </div>
                     </div>
@@ -221,7 +222,7 @@ export default function Admin() {
             ) : (
               <div className="text-center py-12">
                 <Users className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-400">No applications yet</p>
+                <p className="text-gray-400">Заявок пока нет</p>
               </div>
             )}
           </CardContent>

@@ -11,6 +11,7 @@ export const users = pgTable("users", {
 export const streamerApplications = pgTable("streamer_applications", {
   id: serial("id").primaryKey(),
   telegramUserId: text("telegram_user_id"),
+  telegramUsername: text("telegram_username").notNull(), // УБЕДИТЕСЬ, ЧТО ЭТО ЕСТЬ
   twitchChannel: text("twitch_channel"),
   youtubeChannel: text("youtube_channel"),
   contentType: text("content_type").notNull(),
@@ -18,7 +19,7 @@ export const streamerApplications = pgTable("streamer_applications", {
   goals: text("goals").notNull(),
   challenges: text("challenges").notNull(),
   socialMedia: text("social_media"),
-  email: text("email").notNull(),
+  // email: text("email").notNull(), // УБЕДИТЕСЬ, ЧТО ЭТА СТРОКА ЗАКОММЕНТИРОВАНА ИЛИ УДАЛЕНА
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -42,9 +43,14 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
-export const insertStreamerApplicationSchema = createInsertSchema(streamerApplications).omit({
-  id: true,
-  createdAt: true,
+
+
+export const insertStreamerApplicationSchema = createInsertSchema(streamerApplications, {
+  // Можно добавить кастомные правила валидации для Zod, если нужно
+  telegramUsername: z.string().min(2, "Ник в Telegram должен содержать хотя бы 2 символа").regex(/^@?[a-zA-Z0-9_]{2,32}$/, "Некорректный формат ника Telegram (например, @username или username)"),
+}).omit({
+id: true,
+createdAt: true,
 });
 
 export const insertPageViewSchema = createInsertSchema(pageViews).omit({
