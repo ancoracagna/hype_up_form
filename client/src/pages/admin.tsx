@@ -26,10 +26,17 @@ interface Analytics {
 }
 
 export default function Admin() {
-  const { data: analytics, isLoading, error } = useQuery<{ success: boolean; data: Analytics }>({
+  const { data: applications, isLoading: appsLoading } = useQuery<{ success: boolean; applications: any[] }>({
+    queryKey: ["/api/streamer-applications"],
+    retry: 3,
+  });
+
+  const { data: analytics, isLoading: analyticsLoading } = useQuery<{ success: boolean; data: Analytics }>({
     queryKey: ["/api/analytics"],
     retry: 3,
   });
+
+  const isLoading = appsLoading || analyticsLoading;
 
   if (isLoading) {
     return (
@@ -87,7 +94,7 @@ export default function Admin() {
               <Users className="h-4 w-4 text-purple-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats?.totalApplications || 0}</div>
+              <div className="text-2xl font-bold text-white">{applications?.applications?.length || 0}</div>
               <p className="text-xs text-gray-400">All time submissions</p>
             </CardContent>
           </Card>
@@ -98,7 +105,7 @@ export default function Admin() {
               <Eye className="h-4 w-4 text-cyan-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats?.totalPageViews || 0}</div>
+              <div className="text-2xl font-bold text-white">{stats?.totalPageViews || "Loading..."}</div>
               <p className="text-xs text-gray-400">
                 {stats?.pageViewsToday || 0} today
               </p>
@@ -111,7 +118,7 @@ export default function Admin() {
               <MessageCircle className="h-4 w-4 text-pink-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats?.totalChatInteractions || 0}</div>
+              <div className="text-2xl font-bold text-white">{stats?.totalChatInteractions || "Loading..."}</div>
               <p className="text-xs text-gray-400">
                 {stats?.chatInteractionsToday || 0} today
               </p>
@@ -120,15 +127,12 @@ export default function Admin() {
 
           <Card className="bg-card border-green-500/30 hover:border-green-500/50 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-400">Conversion Rate</CardTitle>
+              <CardTitle className="text-sm font-medium text-green-400">Active Now</CardTitle>
               <TrendingUp className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">
-                {stats?.totalPageViews ? 
-                  Math.round(((stats.totalApplications / stats.totalPageViews) * 100)) : 0}%
-              </div>
-              <p className="text-xs text-gray-400">Visitors to applications</p>
+              <div className="text-2xl font-bold text-white">Live</div>
+              <p className="text-xs text-gray-400">Real-time tracking</p>
             </CardContent>
           </Card>
         </div>
@@ -142,9 +146,9 @@ export default function Admin() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {stats?.recentApplications?.length ? (
+            {applications?.applications?.length ? (
               <div className="space-y-6">
-                {stats.recentApplications.map((application) => (
+                {applications.applications.map((application: any) => (
                   <div
                     key={application.id}
                     className="gradient-border p-4 hover:scale-[1.02] transition-transform"
@@ -207,7 +211,7 @@ export default function Admin() {
 
                         <div className="flex items-center gap-2 text-gray-400 text-sm">
                           <Calendar className="h-4 w-4" />
-                          {format(new Date(application.createdAt), "MMM dd, yyyy")}
+                          {application.createdAt ? format(new Date(application.createdAt), "MMM dd, yyyy") : "Recently submitted"}
                         </div>
                       </div>
                     </div>
