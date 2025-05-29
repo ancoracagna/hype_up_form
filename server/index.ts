@@ -26,7 +26,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // true в продакшене (требует HTTPS)
+      secure: true, // true в продакшене (требует HTTPS)
       httpOnly: true, // Предотвращает доступ к куке через JS на клиенте
       maxAge: 1000 * 60 * 60 * 24, // 1 день (в миллисекундах)
     },
