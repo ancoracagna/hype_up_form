@@ -34,14 +34,43 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
     try {
-      await apiRequest("POST", "/api/auth/login", data);
-      // При успешном входе инвалидируем запросы, которые могут зависеть от статуса аутентификации
-      // и перенаправляем на админку или главную.
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/status"] });
-      navigate("/admin", { replace: true });
+      console.log("LoginPage: Попытка входа с:", data);
+      const response = await apiRequest("POST", "/api/auth/login", data); // apiRequest уже должен был обработать не-ОК статусы
+      const responseData = await response.json(); // Парсим JSON
+  
+      console.log("LoginPage: Ответ от /api/auth/login:", responseData);
+  
+      if (responseData.success && responseData.user) { // Убедимся, что user есть
+        console.log("LoginPage: Вход успешен. Инвалидация /api/auth/status...");
+        // Инвалидируем и ждем, пока запрос статуса потенциально обновится.
+        // invalidateQueries возвращает Promise, который резолвится, когда все затронутые запросы завершены/отменены.
+        await queryClient.invalidateQueries({ queryKey: ["/api/auth/status"], exact: true });
+        console.log("LoginPage: /api/auth/status инвалидирован. Попытка refetch...");
+        // Дополнительно можно принудительно перезапросить и дождаться результата
+        // Это может замедлить редирект, но даст больше уверенности, что статус обновлен
+        await queryClient.refetchQueries({ queryKey: ["/api/auth/status"], exact: true });
+        console.log("LoginPage: /api/auth/status перезапрошен. Навигация на /admin...");
+  
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectPath = urlParams.get("redirect") || "/admin"; // Получаем путь для редиректа
+        navigate(redirectPath, { replace: true });
+  
+      } else {
+        setError(responseData.message || "Неизвестная ошибка от сервера при входе.");
+        console.error("LoginPage: API сообщил об ошибке входа:", responseData);
+      }
     } catch (e: any) {
-      setError(e.message || "Ошибка входа. Проверьте данные.");
-      console.error("Login error:", e);
+      console.error("LoginPage: Ошибка запроса на вход (блок catch):", e);
+      let errorMessage = "Ошибка входа. Проверьте данные или попробуйте позже.";
+       if (e.response && typeof e.response.json === 'function') { // если ошибка от apiRequest
+           try {
+               const errorJson = await e.response.json();
+               errorMessage = errorJson.message || errorMessage;
+           } catch (parseError) { /* ignore */ }
+       } else if (e.message) {
+           errorMessage = e.message;
+       }
+      setError(errorMessage);
     }
   };
 

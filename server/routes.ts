@@ -87,45 +87,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", (req, res, next) => {
     passport.authenticate("local", (err: Error | null, user: any, info: { message: string } | undefined) => {
       if (err) {
+        console.error("Сервер: Ошибка passport.authenticate:", err); // Логируем ошибку аутентификации
         return next(err);
       }
       if (!user) {
+        console.log("Сервер: passport.authenticate - Пользователь не найден или неверные учетные данные. Info:", info);
         return res.status(401).json({ success: false, message: info?.message || "Ошибка входа" });
       }
-      req.logIn(user, (loginErr) => { // req.logIn добавляет пользователя в req.user и устанавливает сессию
+
+      // Пользователь найден, пытаемся залогинить и установить сессию
+      req.logIn(user, (loginErr) => {
         if (loginErr) {
+          console.error("Сервер: Ошибка req.logIn:", loginErr);
           return next(loginErr);
         }
-        // Отправляем только неконфиденциальную информацию о пользователе
-        return res.json({ success: true, user: { id: user.id, username: user.username, role: user.role } });
+
+        // Явно сохраняем сессию перед отправкой ответа
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Сервер: Ошибка сохранения сессии (req.session.save) после логина:", saveErr);
+            return next(saveErr); // Важно передать ошибку дальше, чтобы клиент не получил ложноположительный ответ
+          }
+
+          // Только после успешного сохранения сессии логируем и отвечаем
+          console.log("Сервер: Сессия успешно СОХРАНЕНА после /api/auth/login. User ID:", user.id, "Session ID:", req.sessionID);
+          // Проверим состояние аутентификации сразу после сохранения (серверная сторона)
+          console.log("Сервер: Проверка сразу после сохранения: req.isAuthenticated():", req.isAuthenticated(), "req.user:", req.user ? (req.user as any).username : 'undefined');
+
+          // Отправляем только неконфиденциальную информацию о пользователе
+          return res.json({ success: true, user: { id: user.id, username: user.username, role: user.role } });
+        });
       });
     })(req, res, next);
   });
 
   app.post("/api/auth/logout", (req, res, next) => {
-    req.logout((err) => { // req.logout() удаляет req.user и очищает сессию логина (но не саму сессию express)
+    const sessionIdBeforeLogout = req.sessionID; // Сохраним для лога
+    console.log(`Сервер: Попытка выхода для сессии ${sessionIdBeforeLogout}`);
+    req.logout((err) => {
       if (err) {
+        console.error(`Сервер: Ошибка req.logout для сессии ${sessionIdBeforeLogout}:`, err);
         return next(err);
       }
-      // Дополнительно можно уничтожить всю сессию, если это необходимо
+      console.log(`Сервер: req.logout успешен для сессии ${sessionIdBeforeLogout}. Пользователь в req.user после logout:`, req.user); // Должен быть undefined
+
       req.session.destroy((destroyErr) => {
         if (destroyErr) {
-          console.error("Ошибка при уничтожении сессии:", destroyErr);
-          // Можно продолжить, даже если сессию не удалось уничтожить, но залогировать
+          console.error(`Сервер: Ошибка req.session.destroy для сессии ${sessionIdBeforeLogout}:`, destroyErr);
+          // Продолжаем, чтобы хотя бы очистить куку на клиенте
+        } else {
+          console.log(`Сервер: Сессия ${sessionIdBeforeLogout} успешно уничтожена.`);
         }
         res.clearCookie('connect.sid'); // Имя куки по умолчанию для express-session
+        console.log(`Сервер: Кука connect.sid очищена для ответа.`);
         res.json({ success: true, message: "Выход выполнен успешно" });
       });
     });
   });
 
   app.get("/api/auth/status", (req, res) => {
-    if (req.isAuthenticated()) { // req.isAuthenticated() проверяет наличие пользователя в сессии
+    // Добавляем подробное логирование для /api/auth/status
+    console.log("Сервер: Запрос /api/auth/status. Session ID:", req.sessionID);
+    console.log("Сервер: /api/auth/status - req.session:", req.session); // Посмотреть всю сессию
+    console.log("Сервер: /api/auth/status - req.user:", req.user ? (req.user as any).username : 'undefined');
+    console.log("Сервер: /api/auth/status - req.isAuthenticated():", req.isAuthenticated());
+
+    if (req.isAuthenticated()) {
       const user = req.user as any;
       res.json({
         success: true,
         isAuthenticated: true,
-        user: { id: user.id, username: user.username, role: user.role } // Отправляем неконфиденциальную информацию
+        user: { id: user.id, username: user.username, role: user.role }
       });
     } else {
       res.json({ success: false, isAuthenticated: false });
