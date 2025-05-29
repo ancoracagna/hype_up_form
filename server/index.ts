@@ -64,11 +64,10 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // ... ваш middleware логирования запросов ...
-app.use((req: Request, res: Response, next: NextFunction) => {
-  // (ваш код логирования)
-  // Добавим сюда лог для req.secure и req.protocol, чтобы видеть, что Express думает
-  if (req.path.startsWith("/api/auth")) { // Логируем только для auth роутов для краткости
-    console.log(`[Auth Route Check] Path: ${req.path}, Method: ${req.method}, req.secure: ${req.secure}, req.protocol: ${req.protocol}, X-Forwarded-Proto: ${req.headers['x-forwarded-proto']}`);
+app.use((req, res, next) => {
+  if (req.headers['x-ssl'] === 'true' || req.headers['x-ssl'] === '1') {
+    // @ts-ignore // TypeScript может ругаться на изменение req.protocol, но это известный трюк
+    req.protocol = 'https';
   }
   next();
 });
