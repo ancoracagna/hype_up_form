@@ -22,6 +22,11 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   console.log("Development mode: 'trust proxy' is NOT set. SERVER IS EXPECTING PLAIN HTTP.");
 }
+
+app.use((req, res, next) => { // Это middleware должно быть одним из первых
+  console.log(`[GLOBAL CHECK] Path: ${req.path}, X-Forwarded-Proto: ${req.headers['x-forwarded-proto']}, req.protocol: ${req.protocol}, req.secure: ${req.secure}`);
+  next();
+});
 // -----------------------------------------------------------------
 
 app.use(express.json());
@@ -62,16 +67,6 @@ app.use(
 
 app.use(passport.initialize());
 app.use(passport.session());
-
-// ... ваш middleware логирования запросов ...
-app.use((req, res, next) => {
-  if (req.headers['x-ssl'] === 'true' || req.headers['x-ssl'] === '1') {
-    // @ts-ignore // TypeScript может ругаться на изменение req.protocol, но это известный трюк
-    req.protocol = 'https';
-  }
-  next();
-});
-
 
 (async () => {
   // registerRoutes больше не создает сервер, а только настраивает роуты на 'app'
