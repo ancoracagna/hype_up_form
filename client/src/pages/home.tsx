@@ -423,14 +423,6 @@ export default function Home() {
         <p className="text-gray-400">
           <span className="text-cyan-400 font-semibold">Создано с Hype UP</span> – Помогаем стримерам стать популярными
         </p>
-        <div className="mt-4 flex justify-center items-center space-x-6">
-          <Link href="/admin">
-            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-purple-400 transition-colors">
-              <BarChart3 className="h-4 w-4 mr-1" />
-              Админ
-            </Button>
-          </Link>
-        </div>
       </footer>
 
       {/* Chatbot Widget */}
